@@ -3,7 +3,7 @@ import Testing
 
 @Interface
 struct Finite: Finite.`Protocol` {
-    enum Failure: Swift.Error {
+    enum Failure: Swift::Error {
         case refused
     }
 

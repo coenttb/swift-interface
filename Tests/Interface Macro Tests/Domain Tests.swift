@@ -26,7 +26,7 @@ struct Counter: Counter.`Protocol` {
         var value: Int
     }
 
-    enum Error: Swift.Error, Equatable {
+    enum Error: Swift::Error, Equatable {
         case exceeded
     }
 
@@ -50,12 +50,12 @@ struct Example: Example.`Protocol` {
 struct Nested: Nested.`Protocol` {
     struct Input: Hashable {}
     struct Output: Hashable {}
-    enum Failure: Swift.Error {}
+    enum Failure: Swift::Error {}
 
     protocol `Protocol` {
         func transform(
             _ values: [Input]
-        ) throws(Failure) -> Swift.Result<Output, Failure>
+        ) throws(Failure) -> Swift::Result<Output, Failure>
     }
 }
 
@@ -65,7 +65,7 @@ struct Numerals: Numerals.`Protocol` {
         var value: Int
     }
 
-    enum Failure: Swift.Error, Equatable {
+    enum Failure: Swift::Error, Equatable {
         case unreadable
     }
 
@@ -348,7 +348,7 @@ struct `Domain Tests` {
     func `nested domain types remain qualified throughout syntax trees`() async throws {
         let application = Nested.Transform.Application(.init([.init()]))
         let _: Nested.Transform.Input = application.input
-        let _: Nested.Transform.Output.Type = Swift.Result<
+        let _: Nested.Transform.Output.Type = Swift::Result<
             Nested.Output,
             Nested.Failure
         >.self

@@ -37,7 +37,7 @@ let package = Package(
         .target(
             name: "Interface Dependencies",
             dependencies: [
-                "Interface Macro",
+                .target(name: "Interface Macro"),
                 .product(name: "Dependencies", package: "swift-dependencies", condition: .when(traits: ["Dependencies"])),
                 .product(name: "IssueReporting", package: "swift-issue-reporting", condition: .when(traits: ["Dependencies"])),
             ]
@@ -56,7 +56,7 @@ let package = Package(
             dependencies: [
                 .product(name: "Operation Macro Core", package: "swift-operation"),
                 .product(name: "Type Algebra Syntax", package: "swift-algebra"),
-                "Interface Syntax",
+                .target(name: "Interface Syntax"),
                 .product(name: "Operation Syntax", package: "swift-operation"),
                 .product(name: "Product Syntax", package: "swift-product"),
                 .product(name: "SwiftSyntax", package: "swift-syntax"),
@@ -67,7 +67,7 @@ let package = Package(
             name: "Interface Macro Plugin",
             dependencies: [
                 .product(name: "Operation Macro Core", package: "swift-operation"),
-                                "Interface Macro Core",
+                .target(name: "Interface Macro Core"),
                 .product(name: "Type Algebra Syntax", package: "swift-algebra"),
                 .product(name: "SwiftCompilerPlugin", package: "swift-syntax"),
                 .product(name: "SwiftSyntax", package: "swift-syntax"),
@@ -80,7 +80,7 @@ let package = Package(
             dependencies: [
                 .product(name: "Finite Macro", package: "swift-finite"),
                 .product(name: "Representable Macro", package: "swift-functor"),
-                "Interface Macro Plugin",
+                .target(name: "Interface Macro Plugin"),
                 .product(name: "Case Macro", package: "swift-optic"),
                 .product(name: "Eliminator Macro", package: "swift-coproduct"),
                 .product(name: "Fold Macro", package: "swift-optic"),
@@ -93,8 +93,8 @@ let package = Package(
         .testTarget(
             name: "Interface Macro Tests",
             dependencies: [
-                "Interface Macro",
-                "Interface Macro Core",
+                .target(name: "Interface Macro"),
+                .target(name: "Interface Macro Core"),
                 .product(name: "CustomDump", package: "swift-custom-dump"),
                 .product(name: "SwiftParser", package: "swift-syntax"),
             ],
@@ -105,22 +105,14 @@ let package = Package(
 )
 
 for target in package.targets where ![.system, .binary, .plugin, .macro].contains(target.type) {
-    let ecosystem: [SwiftSetting] = [
+    target.swiftSettings = (target.swiftSettings ?? []) + [
         .strictMemorySafety(),
         .enableUpcomingFeature("ExistentialAny"),
         .enableUpcomingFeature("InternalImportsByDefault"),
         .enableUpcomingFeature("MemberImportVisibility"),
         .enableUpcomingFeature("NonisolatedNonsendingByDefault"),
-        .enableExperimentalFeature("Lifetimes"),
-        .enableExperimentalFeature("MoveOnlyTuples"),
         .enableUpcomingFeature("InferIsolatedConformances"),
+        .enableExperimentalFeature("Lifetimes"),
+        .treatAllWarnings(as: .error),
     ]
-    let package: [SwiftSetting] = []
-
-    target.swiftSettings = (target.swiftSettings ?? []) + ecosystem + package
-}
-
-// Consumer compilation must reject visibility regressions, even when other packages suppress warnings.
-for target in package.targets where target.type == .test || target.name.hasSuffix("Consumer Fixtures") {
-    target.swiftSettings = (target.swiftSettings ?? []) + [.treatAllWarnings(as: .error)]
 }

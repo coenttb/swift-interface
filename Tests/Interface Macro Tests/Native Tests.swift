@@ -15,7 +15,7 @@ private struct Local: Local.Interface {
 }
 
 @Interface
-private struct Qualified: Qualified.Interface, Swift.Sendable {
+private struct Qualified: Qualified.Interface, Swift::Sendable {
     protocol Interface { func ping() -> Bool }
 }
 

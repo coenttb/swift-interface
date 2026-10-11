@@ -7,7 +7,7 @@ enum Store {
         var value: String
     }
 
-    enum Failure: Swift.Error, Equatable {
+    enum Failure: Swift::Error, Equatable {
         case missing
     }
 
@@ -143,7 +143,7 @@ private struct `Wrapper Tests` {
 
     @Test
     func `untyped throws is the any Error sort`() {
-        let _: Store.Items.Remove.Failure.Type = (any Swift.Error).self
+        let _: Store.Items.Remove.Failure.Type = (any Swift::Error).self
         let _: Store.Items.Count.Failure.Type = Never.self
     }
 

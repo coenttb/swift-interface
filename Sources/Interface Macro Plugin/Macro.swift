@@ -6,6 +6,9 @@ import SwiftSyntaxBuilder
 import SwiftSyntaxMacros
 
 public struct Macro: MemberMacro, ExtensionMacro {
+}
+
+extension Macro {
     public static func expansion(
         of node: AttributeSyntax,
         attachedTo declaration: some DeclGroupSyntax,

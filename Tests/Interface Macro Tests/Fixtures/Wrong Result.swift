@@ -15,7 +15,7 @@ struct Greeting: Greeting.`Protocol` {
 struct Counter: Counter.`Protocol` {
     struct Limit: Hashable {}
     struct Value: Hashable {}
-    enum Failure: Swift.Error {}
+    enum Failure: Swift::Error {}
 
     protocol `Protocol` {
         func increment(_ limit: Limit) throws(Failure) -> Value

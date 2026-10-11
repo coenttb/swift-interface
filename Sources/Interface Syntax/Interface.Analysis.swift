@@ -14,17 +14,6 @@ extension Interface {
             public let declaration: VariableDeclSyntax
             public let name: TokenSyntax
             public let domain: TypeSyntax
-
-            public var call: TypeSyntax {
-                TypeSyntax(MemberTypeSyntax(baseType: domain, name: .identifier("Call")))
-            }
-        }
-
-        public var algebra: Type.Interface {
-            get throws {
-                try Type.Interface(signature: operations.algebra,
-                    children: Type.Record(children.map { .init($0.name.text, Type.Syntax.Expression($0.domain, parameters: []).algebra) }))
-            }
         }
 
         public let declaration: ProtocolDeclSyntax
@@ -33,26 +22,6 @@ extension Interface {
         public let operations: Operation.Analysis
         public let children: [Child]
         public let diagnostics: [String]
-
-        public var symbols: [Symbol] { operations.symbols }
-
-        /// The unlabelled primary operation, when there is one: the interface is then this operation's symbol.
-        public var run: Symbol? { symbols.first { $0.isPrimary && $0.variant == nil } }
-
-        public static let derived = [
-            "Structure", "Primary", "Request",
-            "Model",
-            "Product",
-            "Client",
-            "ClientDefinition",
-            "Coproduct",
-            "Embedding",
-            "Call",
-            "Cases",
-            "Prisms",
-            "Folds",
-            "Eliminator",
-        ]
 
         public init(
             declaration: ProtocolDeclSyntax,
@@ -98,18 +67,53 @@ extension Interface {
             children = recognizedChildren
             diagnostics = reasons
         }
+    }
+}
 
-        fileprivate static func domain(
-            of associated: Product.Analysis.AssociatedType
-        ) -> TypeSyntax? {
-            guard
-                associated.declaration.inheritanceClause?.inheritedTypes.count == 1,
-                let inherited = associated.constraint,
-                let semantic = inherited.as(MemberTypeSyntax.self),
-                ["Interface", "`Interface`", "Protocol", "`Protocol`"].contains(semantic.name.text),
-                semantic.genericArgumentClause == nil
-            else { return nil }
-            return semantic.baseType
+extension Interface.Analysis.Child {
+    public var call: TypeSyntax {
+        TypeSyntax(MemberTypeSyntax(baseType: domain, name: .identifier("Call")))
+    }
+}
+
+extension Interface.Analysis {
+    public var algebra: Type.Interface {
+        get throws {
+            try Type.Interface(signature: operations.algebra,
+                children: Type.Record(children.map { .init($0.name.text, Type.Syntax.Expression($0.domain, parameters: []).algebra) }))
         }
+    }
+
+    public var symbols: [Symbol] { operations.symbols }
+
+    /// The unlabelled primary operation, when there is one: the interface is then this operation's symbol.
+    public var run: Symbol? { symbols.first { $0.isPrimary && $0.variant == nil } }
+
+    public static let derived = [
+        "Structure", "Primary", "Request",
+        "Model",
+        "Product",
+        "Client",
+        "ClientDefinition",
+        "Coproduct",
+        "Embedding",
+        "Call",
+        "Cases",
+        "Prisms",
+        "Folds",
+        "Eliminator",
+    ]
+
+    fileprivate static func domain(
+        of associated: Product.Analysis.AssociatedType
+    ) -> TypeSyntax? {
+        guard
+            associated.declaration.inheritanceClause?.inheritedTypes.count == 1,
+            let inherited = associated.constraint,
+            let semantic = inherited.as(MemberTypeSyntax.self),
+            ["Interface", "`Interface`", "Protocol", "`Protocol`"].contains(semantic.name.text),
+            semantic.genericArgumentClause == nil
+        else { return nil }
+        return semantic.baseType
     }
 }
