@@ -61,7 +61,6 @@ private enum NamedDomain {
     #expect(value == 7)
 }
 
-
 @Test func deletionProjectionComposesCaseExtractionWithInputForwarding() {
     let deleting: (SendingDomain.Call) -> Int? = \.delete?.id
     let path: KeyPath<SendingDomain.Call, Int?> = \.delete?.id

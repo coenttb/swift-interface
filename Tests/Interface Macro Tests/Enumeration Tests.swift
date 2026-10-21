@@ -15,7 +15,6 @@ struct FiniteAssessment: FiniteAssessment.Interface, Sendable {
     }
 }
 
-
 @Test private func generatedInputsHaveExhaustiveFiniteEnumeration() {
     typealias Input = FiniteAssessment.`het bezit rechtspersoonlijkheid`.Input
     #expect(Input.count.rawValue == 243)
@@ -30,8 +29,10 @@ private typealias AssessmentInput = FiniteAssessment.`het bezit rechtspersoonlij
 private func finiteInputsComposeWithInterfaceAndTesting(
     input: FiniteAssessment.`het bezit rechtspersoonlijkheid`.Input
 ) {
-    #expect(FiniteAssessment { $0.`betreft het de staat` }.`het bezit rechtspersoonlijkheid`(input)
-        == input.`betreft het de staat`)
+    #expect(
+        FiniteAssessment { $0.`betreft het de staat` }.`het bezit rechtspersoonlijkheid`(input)
+            == input.`betreft het de staat`
+    )
 }
 
 private enum FiniteOperations {

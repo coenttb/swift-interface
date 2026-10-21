@@ -1,9 +1,9 @@
-import Type_Algebra_Syntax
-import Operation_Syntax
 import Operation_Macro_Core
+import Operation_Syntax
 public import Product_Syntax
 public import SwiftSyntax
 import SwiftSyntaxBuilder
+import Type_Algebra_Syntax
 
 // @Interface composes. The protocol's @Operations declares one symbol per operation (`Owner.Greet`, with its
 // Input/Output/Failure); @Product, attached to the generated model protocol, derives the stored arrows and
@@ -25,16 +25,21 @@ import SwiftSyntaxBuilder
 extension Interface {
     public enum Derivation {
         public static func members(of signature: Interface.Analysis, sendable: Bool = false, inputAttributes: [AttributeSyntax] = [], inputConformances: [String] = []) -> [DeclSyntax] {
-            do { return try derive(signature, sendable: sendable, inputAttributes: inputAttributes, inputConformances: inputConformances) }
-            catch { return [DeclSyntax(stringLiteral: "#error(\(String(reflecting: String(describing: error))))")] }
+            do { return try derive(signature, sendable: sendable, inputAttributes: inputAttributes, inputConformances: inputConformances) } catch {
+                return [DeclSyntax(stringLiteral: "#error(\(String(reflecting: String(describing: error))))")]
+            }
         }
 
         private static func derive(_ signature: Interface.Analysis, sendable: Bool, inputAttributes: [AttributeSyntax], inputConformances: [String]) throws -> [DeclSyntax] {
             let algebra = try signature.algebra
             let implementation = try algebra.implementation
-            let requests = try algebra.requestRecord(children: Type.Record(signature.children.map {
-                .init($0.name.text, .atom(.init($0.call.trimmedDescription, scope: ["Swift"])))
-            }))
+            let requests = try algebra.requestRecord(
+                children: Type.Record(
+                    signature.children.map {
+                        .init($0.name.text, .atom(.init($0.call.trimmedDescription, scope: ["Swift"])))
+                    }
+                )
+            )
 
             let access = signature.product.access.map { "\($0.name.text) " } ?? ""
             let owner = signature.owner.trimmedDescription
@@ -47,10 +52,11 @@ extension Interface {
                 + Self.call(of: signature, requests: requests, access: access)
         }
 
-
         private static func operations(
-            of signature: Interface.Analysis, access: String,
-            inputAttributes: [AttributeSyntax], inputConformances: [String]
+            of signature: Interface.Analysis,
+            access: String,
+            inputAttributes: [AttributeSyntax],
+            inputConformances: [String]
         ) -> [DeclSyntax] {
             let owner = signature.owner.trimmedDescription
             return Operation.Derivation.peers(
@@ -59,19 +65,23 @@ extension Interface {
                 inputConformances: inputConformances,
                 conformances: ["Operation::Operation.Composed"]
             ) { symbol in
-                [DeclSyntax(stringLiteral: """
-                    \(access)typealias Call = \(owner).Call
-                    \(access)static func call(_ input: consuming Input) -> Call { .\(symbol.caseName)(input) }
-                    \(access)static func input(from call: consuming Call) -> Input? {
-                        switch consume call {
-                        case let .\(symbol.caseName)(application): return application.consume()
-                        \(signature.symbols.count == 1 && signature.children.isEmpty ? "" : "default: return nil")
-                        }
-                    }
-                    \(access)static func run(_ owner: \(owner), _ input: consuming Input)\(symbol.effects) -> Output {
-                        \(symbol.signature.returnsVoid ? "" : "return ")\(symbol.prefix)owner.product.\(symbol.caseName)(input)
-                    }
-                    """)]
+                [
+                    DeclSyntax(
+                        stringLiteral: """
+                            \(access)typealias Call = \(owner).Call
+                            \(access)static func call(_ input: consuming Input) -> Call { .\(symbol.caseName)(input) }
+                            \(access)static func input(from call: consuming Call) -> Input? {
+                                switch consume call {
+                                case let .\(symbol.caseName)(application): return application.consume()
+                                \(signature.symbols.count == 1 && signature.children.isEmpty ? "" : "default: return nil")
+                                }
+                            }
+                            \(access)static func run(_ owner: \(owner), _ input: consuming Input)\(symbol.effects) -> Output {
+                                \(symbol.signature.returnsVoid ? "" : "return ")\(symbol.prefix)owner.product.\(symbol.caseName)(input)
+                            }
+                            """
+                    )
+                ]
             }
         }
 
@@ -94,11 +104,13 @@ extension Interface {
                 "Interface_Macro.Interface.Cons<\(owner).Structure.\(child.name.trimmedDescription), \(table)>"
             }
             return [
-                DeclSyntax(stringLiteral: """
-                    \(access)enum Structure {
-                    \(children)
-                    }
-                    """),
+                DeclSyntax(
+                    stringLiteral: """
+                        \(access)enum Structure {
+                        \(children)
+                        }
+                        """
+                ),
                 DeclSyntax(stringLiteral: "\(access)typealias Members = \(members)"),
             ]
         }
@@ -115,9 +127,10 @@ extension Interface {
             access: String
         ) -> [DeclSyntax] {
             guard let run = signature.run else { return [] }
-            return [DeclSyntax(stringLiteral: "\(access)typealias Primary = \(run.name)"), DeclSyntax(stringLiteral: "\(access)typealias Request = \(run.name).Input")] + ["Input", "Output", "Failure", "Application"].map { sort in
-                DeclSyntax(stringLiteral: "\(access)typealias \(sort) = \(run.name).\(sort)")
-            }
+            return [DeclSyntax(stringLiteral: "\(access)typealias Primary = \(run.name)"), DeclSyntax(stringLiteral: "\(access)typealias Request = \(run.name).Input")]
+                + ["Input", "Output", "Failure", "Application"].map { sort in
+                    DeclSyntax(stringLiteral: "\(access)typealias \(sort) = \(run.name).\(sort)")
+                }
         }
 
         // The model is a product of Input-typed operation arrows and child values.
@@ -168,7 +181,8 @@ extension Interface {
             // the owner's initializer either: `run` is storage, never spelled by the reader.
             let record = try model.analysis.storage()
             let parameters = try model.analysis.storage(
-                unlabelled: Set(signature.run.map { [$0.caseName] } ?? [])).parameters
+                unlabelled: Set(signature.run.map { [$0.caseName] } ?? [])
+            ).parameters
             let construction = try record.constructing("Product", from: .product(record.fields.map { .value($0.binding) }))
             let stored: [String] = [
                 "\(access)var product: Product",
@@ -214,11 +228,13 @@ extension Interface {
             of signature: Interface.Analysis,
             access: String
         ) -> DeclSyntax {
-            DeclSyntax(stringLiteral: """
-                \(access)func callAsFunction(_ call: consuming Call) async throws {
-                    \(signature.symbols.isEmpty && signature.children.isEmpty ? "" : "try await Call.run(self, call)")
-                }
-                """)
+            DeclSyntax(
+                stringLiteral: """
+                    \(access)func callAsFunction(_ call: consuming Call) async throws {
+                        \(signature.symbols.isEmpty && signature.children.isEmpty ? "" : "try await Call.run(self, call)")
+                    }
+                    """
+            )
         }
 
         // The Call is generic in its leaves so that the compiler, not this macro, decides its capabilities:
@@ -247,10 +263,12 @@ extension Interface {
             }
             let parameters = leaves.map(\.parameter) + childParameters.map(\.parameter)
             let generic = parameters.isEmpty ? "" : "<" + parameters.map { "\($0): ~Copyable" }.joined(separator: ", ") + ">"
-            let conformances = parameters.isEmpty
+            let conformances =
+                parameters.isEmpty
                 ? "Swift.Hashable, Swift.Sendable, Operation::Operation.Coproduct, Operation::Operation.Sending"
                 : "~Copyable, Operation::Operation.Coproduct, Operation::Operation.Sending"
-            let constraints = leaves.map { "\($0.parameter): Operation::Operation.Applying<\($0.symbol.inputPath(owner: owner))>" }
+            let constraints =
+                leaves.map { "\($0.parameter): Operation::Operation.Applying<\($0.symbol.inputPath(owner: owner))>" }
                 + childParameters.flatMap { ["\($0.parameter): Operation::Operation.Coproduct", "\($0.parameter).Owner == \($0.child.domain.trimmedDescription)"] }
             let requirements = constraints.isEmpty ? "" : "\nwhere " + constraints.joined(separator: ", ")
             let capabilities = parameters.isEmpty ? "" : "@_Structural\n"
@@ -263,17 +281,17 @@ extension Interface {
                 var applicationName = "_application"
                 while used.contains(applicationName) || used.contains("`" + applicationName + "`") { applicationName = "_" + applicationName }
                 return """
-                \(access)static func \(symbol.caseName)\(symbol.signature.declaration.signature.parameterClause.trimmedDescription) -> Self {
-                    let \(inputName): \(symbol.inputPath(owner: owner)) = \(symbol.inputPath(owner: owner))(\(symbol.construction))
-                    let \(applicationName): \(leaf.parameter) = \(leaf.parameter)(\(inputName))
-                    return Self.\(symbol.caseName)(\(applicationName))
-                }
+                    \(access)static func \(symbol.caseName)\(symbol.signature.declaration.signature.parameterClause.trimmedDescription) -> Self {
+                        let \(inputName): \(symbol.inputPath(owner: owner)) = \(symbol.inputPath(owner: owner))(\(symbol.construction))
+                        let \(applicationName): \(leaf.parameter) = \(leaf.parameter)(\(inputName))
+                        return Self.\(symbol.caseName)(\(applicationName))
+                    }
 
-                \(access)static func \(symbol.caseName)(_ input: \(symbol.inputParameter(owner: owner))) -> Self {
-                    let application: \(leaf.parameter) = \(leaf.parameter)(input)
-                    return Self.\(symbol.caseName)(application)
-                }
-                """
+                    \(access)static func \(symbol.caseName)(_ input: \(symbol.inputParameter(owner: owner))) -> Self {
+                        let application: \(leaf.parameter) = \(leaf.parameter)(input)
+                        return Self.\(symbol.caseName)(application)
+                    }
+                    """
             }
             var embeddingResult = "_Result"
             while owner.split(separator: ".").contains(Substring(embeddingResult)) || parameters.contains(embeddingResult) {
@@ -289,7 +307,8 @@ extension Interface {
             }
             let source = "Coproduct" + (parameters.isEmpty ? "" : "<" + parameters.joined(separator: ", ") + ">")
             // A one-operation Call reads as that operation's input: `request.id`.
-            let forwarding = leaves.count == 1 && !leaves[0].symbol.transfers && signature.children.isEmpty
+            let forwarding =
+                leaves.count == 1 && !leaves[0].symbol.transfers && signature.children.isEmpty
                 ? """
                 \(access)subscript<Member>(dynamicMember keyPath: Swift.KeyPath<\(leaves[0].symbol.inputPath(owner: owner)), Member>) -> Member
                 where \(leaves[0].parameter): Copyable {
@@ -300,20 +319,22 @@ extension Interface {
                 }
                 """
                 : ""
-            let arms = leaves.map { leaf -> String in
-                """
-                \(leaf.symbol.caseName): { (application: consuming \(leaf.parameter)) async throws -> Void in
-                    \(leaf.symbol.signature.returnsVoid ? "" : "_ = ")\(leaf.symbol.prefix)\(owner).\(leaf.symbol.name).run(owner, application.consume())
+            let arms =
+                leaves.map { leaf -> String in
+                    """
+                    \(leaf.symbol.caseName): { (application: consuming \(leaf.parameter)) async throws -> Void in
+                        \(leaf.symbol.signature.returnsVoid ? "" : "_ = ")\(leaf.symbol.prefix)\(owner).\(leaf.symbol.name).run(owner, application.consume())
+                    }
+                    """
                 }
-                """
-            } + childParameters.map { entry in
-                let child = entry.child
-                return """
-                \(child.name.text): { (call: consuming \(entry.parameter)) async throws -> Void in
-                    try await \(entry.parameter).run(owner.\(child.name.text), call)
+                + childParameters.map { entry in
+                    let child = entry.child
+                    return """
+                        \(child.name.text): { (call: consuming \(entry.parameter)) async throws -> Void in
+                            try await \(entry.parameter).run(owner.\(child.name.text), call)
+                        }
+                        """
                 }
-                """
-            }
             // A primary is the embedding called; a named operation is a callable member (a property, so that a
             // store's dynamic member lookup reaches it: `store.create(draft)`); a child is the child's embedding.
             let embedded = leaves.flatMap { leaf -> [String] in
@@ -331,7 +352,8 @@ extension Interface {
                     """,
                 ]
                 if symbol.isPrimary { return calls }
-                return ["""
+                return [
+                    """
                     \(access)var \(symbol.caseName): \(symbol.name) { .init(embed: embed) }
 
                     \(access)struct \(symbol.name) {
@@ -339,45 +361,52 @@ extension Interface {
 
                     \(calls.joined(separator: "\n"))
                     }
-                    """]
+                    """
+                ]
             }
-            let embedding = DeclSyntax(stringLiteral: """
-                \(childEmbeddings(embedding: true))
-                \(access)struct Embedding<\(embeddingResult): ~Copyable\(parameters.isEmpty ? "" : ", " + parameters.map { "\($0): ~Copyable" }.joined(separator: ", "))>\(requirements) {
-                    \(access)let embed: (consuming \(source)) -> \(embeddingResult)
-                    \(access)init(_ embed: @escaping (consuming \(source)) -> \(embeddingResult)) { self.embed = embed }
-                    \(embedded.joined(separator: "\n"))
-                }
-                """)
+            let embedding = DeclSyntax(
+                stringLiteral: """
+                    \(childEmbeddings(embedding: true))
+                    \(access)struct Embedding<\(embeddingResult): ~Copyable\(parameters.isEmpty ? "" : ", " + parameters.map { "\($0): ~Copyable" }.joined(separator: ", "))>\(requirements) {
+                        \(access)let embed: (consuming \(source)) -> \(embeddingResult)
+                        \(access)init(_ embed: @escaping (consuming \(source)) -> \(embeddingResult)) { self.embed = embed }
+                        \(embedded.joined(separator: "\n"))
+                    }
+                    """
+            )
             return [
                 embedding,
-                DeclSyntax(stringLiteral: """
-                    \(childEmbeddings(embedding: false))
-                    \(capabilities)@Prisms
-                    @Folds
-                    @Cases
-                    @Eliminator(consuming: true, asynchronous: true, throwing: true)
-                    @dynamicMemberLookup
-                    \(access)enum Coproduct\(generic): \(conformances)\(requirements) {
-                    \(cases.joined(separator: "\n"))
+                DeclSyntax(
+                    stringLiteral: """
+                        \(childEmbeddings(embedding: false))
+                        \(capabilities)@Prisms
+                        @Folds
+                        @Cases
+                        @Eliminator(consuming: true, asynchronous: true, throwing: true)
+                        @dynamicMemberLookup
+                        \(access)enum Coproduct\(generic): \(conformances)\(requirements) {
+                        \(cases.joined(separator: "\n"))
 
-                    \(constructors.joined(separator: "\n"))
+                        \(constructors.joined(separator: "\n"))
 
-                    \(forwarding)
+                        \(forwarding)
 
-                        \(access)typealias Embedding<\(embeddingResult): ~Copyable> = \(owner).Embedding<\(embeddingResult)\(parameters.isEmpty ? "" : ", " + parameters.joined(separator: ", "))>
-                        \(access)static func sending(_ send: @escaping (consuming Self) -> Void) -> Embedding<Void> { .init(send) }
-                        \(access)typealias Owner = \(owner)
+                            \(access)typealias Embedding<\(embeddingResult): ~Copyable> = \(owner).Embedding<\(embeddingResult)\(parameters.isEmpty ? "" : ", " + parameters.joined(separator: ", "))>
+                            \(access)static func sending(_ send: @escaping (consuming Self) -> Void) -> Embedding<Void> { .init(send) }
+                            \(access)typealias Owner = \(owner)
 
-                        // Effects policy: running a Call is always `async throws`, the widest of its arms.
-                        \(access)static func run(_ owner: \(owner), _ call: consuming Self) async throws {
-                            \(arms.isEmpty ? "" : "let eliminate: Eliminator<Void> = Eliminator<Void>(\(arms.joined(separator: ",\n")))\ntry await eliminate(call)")
+                            // Effects policy: running a Call is always `async throws`, the widest of its arms.
+                            \(access)static func run(_ owner: \(owner), _ call: consuming Self) async throws {
+                                \(arms.isEmpty ? "" : "let eliminate: Eliminator<Void> = Eliminator<Void>(\(arms.joined(separator: ",\n")))\ntry await eliminate(call)")
+                            }
                         }
-                    }
-                    """),
-                DeclSyntax(stringLiteral: parameters.isEmpty
-                    ? "\(access)typealias Call = Coproduct"
-                    : "\(access)typealias Call = Coproduct<\((leaves.map(\.bound) + childParameters.map { $0.child.call.trimmedDescription }).joined(separator: ", "))>"),
+                        """
+                ),
+                DeclSyntax(
+                    stringLiteral: parameters.isEmpty
+                        ? "\(access)typealias Call = Coproduct"
+                        : "\(access)typealias Call = Coproduct<\((leaves.map(\.bound) + childParameters.map { $0.child.call.trimmedDescription }).joined(separator: ", "))>"
+                ),
             ]
         }
     }

@@ -15,7 +15,8 @@ import Testing
     expectNoDifference(truth, domain.truth(false))
     let eliminate = Answers.Call.Eliminator<String>(
         truth: { String(describing: try await $0.run(on: domain)) },
-        text: { try await $0.run(on: domain) })
+        text: { try await $0.run(on: domain) }
+    )
     let text = try await eliminate(.text("answer"))
     expectNoDifference(text, "ANSWER")
 }
@@ -34,10 +35,16 @@ import Testing
     protocol Interface { func callAsFunction(_ value: Bool?) -> Bool? }
 }
 @Interface private struct Group: Group.Interface {
-    protocol Interface { var first: Leaf { get }; var second: Leaf { get } }
+    protocol Interface {
+        var first: Leaf { get }
+        var second: Leaf { get }
+    }
 }
 @Interface private struct Mixed: Mixed.Interface {
-    protocol Interface { var first: Leaf { get }; func text(_ value: String) -> String }
+    protocol Interface {
+        var first: Leaf { get }
+        func text(_ value: String) -> String
+    }
 }
 @Test private func `coordinate replacement preserves siblings for pure and mixed products`() {
     var group = Group(first: .init { $0.value }, second: .init { _ in false })
@@ -65,7 +72,10 @@ import Testing
     protocol Interface { func append(_ value: String) async }
 }
 @Interface private struct Branches: Branches.Interface {
-    protocol Interface { var left: Recorded { get }; var right: Recorded { get } }
+    protocol Interface {
+        var left: Recorded { get }
+        var right: Recorded { get }
+    }
 }
 
 @Test private func `nested dispatch preserves injection and executes exactly one operation`() async throws {
@@ -76,7 +86,8 @@ import Testing
     let recorder = Recorder()
     let owner = Branches(
         left: .init(append: { await recorder.append("left:" + $0.value) }),
-        right: .init(append: { await recorder.append("right:" + $0.value) }))
+        right: .init(append: { await recorder.append("right:" + $0.value) })
+    )
     try await owner(.right.append("one"))
     try await owner(.left.append("two"))
     let values = await recorder.values

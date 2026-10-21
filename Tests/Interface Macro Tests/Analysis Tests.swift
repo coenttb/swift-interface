@@ -1,5 +1,5 @@
-import Interface_Syntax
 import Interface_Macro_Core
+import Interface_Syntax
 import Operation_Syntax
 import Product_Syntax
 import SwiftParser
@@ -9,14 +9,16 @@ import Testing
 // An interface's analysis is the operations' analysis (its symbols) plus the product's (its children).
 @Test
 func `an interface reads its operations as symbols and its getters as children`() throws {
-    let source = Parser.parse(source: """
-        protocol `Protocol` {
-            associatedtype Greeting: Greeting.`Protocol`
-            var greeting: Greeting { get }
-            func transform(_ values: [Input]) throws(Failure) -> Result<Output, Failure>
-            func combine(_ input: borrowing Input, with output: consuming Output)
-        }
-        """)
+    let source = Parser.parse(
+        source: """
+            protocol `Protocol` {
+                associatedtype Greeting: Greeting.`Protocol`
+                var greeting: Greeting { get }
+                func transform(_ values: [Input]) throws(Failure) -> Result<Output, Failure>
+                func combine(_ input: borrowing Input, with output: consuming Output)
+            }
+            """
+    )
     let declaration = try #require(
         source.statements.first?.item.as(ProtocolDeclSyntax.self)
     )
@@ -43,11 +45,13 @@ func `an interface reads its operations as symbols and its getters as children`(
 
 @Test
 func `interface analysis is independent of installed macro attributes`() throws {
-    let source = Parser.parse(source: """
-        protocol `Protocol` {
-            func greet(_ name: String) -> String
-        }
-        """)
+    let source = Parser.parse(
+        source: """
+            protocol `Protocol` {
+                func greet(_ name: String) -> String
+            }
+            """
+    )
     let declaration = try #require(
         source.statements.first?.item.as(ProtocolDeclSyntax.self)
     )

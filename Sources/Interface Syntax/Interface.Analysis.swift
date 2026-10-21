@@ -1,7 +1,7 @@
-public import Type_Algebra_Syntax
 public import Operation_Syntax
 public import Product_Syntax
 public import SwiftSyntax
+public import Type_Algebra_Syntax
 
 extension Interface {
     // An interface read as its operations (Operation.Analysis, whose symbols @Operations declares beside the
@@ -49,8 +49,7 @@ extension Interface {
             var usedDomains: Set<String> = []
             var recognizedChildren: [Child] = []
             for property in product.propertyCoordinates {
-                if
-                    let associated = property.type.as(IdentifierTypeSyntax.self),
+                if let associated = property.type.as(IdentifierTypeSyntax.self),
                     associated.moduleSelector == nil,
                     associated.genericArgumentClause == nil,
                     let domain = domains[associated.name.text]
@@ -79,8 +78,10 @@ extension Interface.Analysis.Child {
 extension Interface.Analysis {
     public var algebra: Type.Interface {
         get throws {
-            try Type.Interface(signature: operations.algebra,
-                children: Type.Record(children.map { .init($0.name.text, Type.Syntax.Expression($0.domain, parameters: []).algebra) }))
+            try Type.Interface(
+                signature: operations.algebra,
+                children: Type.Record(children.map { .init($0.name.text, Type.Syntax.Expression($0.domain, parameters: []).algebra) })
+            )
         }
     }
 

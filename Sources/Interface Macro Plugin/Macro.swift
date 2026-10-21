@@ -1,9 +1,9 @@
-import Operation_Macro_Core
-import Type_Algebra_Syntax
 import Interface_Macro_Core
+import Operation_Macro_Core
 import SwiftSyntax
 import SwiftSyntaxBuilder
 import SwiftSyntaxMacros
+import Type_Algebra_Syntax
 
 public struct Macro: MemberMacro, ExtensionMacro {
 }
@@ -41,16 +41,19 @@ extension Macro {
         }
         // Prefer the explicit semantic owner: a nested child may have the same
         // short name as its parent (for example Artikel.`1`.`1`).
-        let name = owner.inheritanceClause?.inheritedTypes.lazy.compactMap { inherited -> TypeSyntax? in
-            guard let member = inherited.type.as(MemberTypeSyntax.self),
-                member.name.text == semantic.name.text
-            else { return nil }
-            return member.baseType.trimmed
-        }.first ?? TypeSyntax(IdentifierTypeSyntax(name: owner.name.trimmed))
+        let name =
+            owner.inheritanceClause?.inheritedTypes.lazy.compactMap { inherited -> TypeSyntax? in
+                guard let member = inherited.type.as(MemberTypeSyntax.self),
+                    member.name.text == semantic.name.text
+                else { return nil }
+                return member.baseType.trimmed
+            }.first ?? TypeSyntax(IdentifierTypeSyntax(name: owner.name.trimmed))
         let analysis = try Self.analysis(of: semantic, owner: name)
-        guard !semantic.attributes.contains(where: {
-            $0.as(AttributeSyntax.self)?.attributeName.trimmedDescription == "Operations"
-        }) else {
+        guard
+            !semantic.attributes.contains(where: {
+                $0.as(AttributeSyntax.self)?.attributeName.trimmedDescription == "Operations"
+            })
+        else {
             throw MacroExpansionErrorMessage("@Interface composes its operation symbols; forward input capabilities on @Interface instead of attaching @Operations to its signature.")
         }
         let input = try Operation.Derivation.Input(node)
@@ -64,7 +67,8 @@ extension Macro {
 
     private static func conformsToSemantic(_ owner: StructDeclSyntax) -> Bool {
         owner.inheritanceClause?.inheritedTypes.contains { inherited in
-            let name = inherited.type.as(MemberTypeSyntax.self)?.name.text
+            let name =
+                inherited.type.as(MemberTypeSyntax.self)?.name.text
                 ?? inherited.type.as(IdentifierTypeSyntax.self)?.name.text
             return name.map { ["Interface", "`Interface`", "Protocol", "`Protocol`"].contains($0) } ?? false
         } ?? false
@@ -78,7 +82,8 @@ extension Macro {
 
     private static func isSemantic(_ declaration: ProtocolDeclSyntax) -> Bool {
         let spelling = declaration.name.text
-        let name = spelling.first == "`" && spelling.last == "`"
+        let name =
+            spelling.first == "`" && spelling.last == "`"
             ? String(spelling.dropFirst().dropLast())
             : spelling
         return name == "Interface" || name == "Protocol"

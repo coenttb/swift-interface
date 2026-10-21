@@ -16,7 +16,8 @@ import Testing
 }
 
 private func invokePrimary<Domain: Interface.Primary>(
-    _ domain: Domain, _ input: consuming Domain.Primary.Input
+    _ domain: Domain,
+    _ input: consuming Domain.Primary.Input
 ) async throws -> Domain.Primary.Output {
     try await Domain.Primary.run(domain, input)
 }

@@ -58,7 +58,7 @@ private func `pure elimination can return an effectful arrow without another ope
     let effect = try await eliminator(call)
 
     switch await effect() {
-    case let .left(output): #expect(output == "second=true")
+    case .left(let output): #expect(output == "second=true")
     case .right: Issue.record("Expected success")
     }
 }

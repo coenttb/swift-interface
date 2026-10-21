@@ -8,19 +8,25 @@ struct Embeddings: ExtensionMacro {
 }
 
 extension Embeddings {
-    static func expansion(of node: AttributeSyntax, attachedTo declaration: some DeclGroupSyntax,
-        providingExtensionsOf type: some TypeSyntaxProtocol, conformingTo protocols: [TypeSyntax],
-        in context: some MacroExpansionContext) throws -> [ExtensionDeclSyntax] {
+    static func expansion(
+        of node: AttributeSyntax,
+        attachedTo declaration: some DeclGroupSyntax,
+        providingExtensionsOf type: some TypeSyntaxProtocol,
+        conformingTo protocols: [TypeSyntax],
+        in context: some MacroExpansionContext
+    ) throws -> [ExtensionDeclSyntax] {
         func string(_ expression: ExprSyntax) throws -> String {
             guard let literal = expression.as(StringLiteralExprSyntax.self), literal.segments.count == 1,
-                let segment = literal.segments.first?.as(StringSegmentSyntax.self) else {
+                let segment = literal.segments.first?.as(StringSegmentSyntax.self)
+            else {
                 throw MacroExpansionErrorMessage("Interface child descriptors must be literal strings")
             }
             return segment.content.text
         }
-        guard case let .argumentList(arguments) = node.arguments,
+        guard case .argumentList(let arguments) = node.arguments,
             let first = arguments.first, first.label?.text == "preserving",
-            declaration.is(EnumDeclSyntax.self) || declaration.is(StructDeclSyntax.self) else {
+            declaration.is(EnumDeclSyntax.self) || declaration.is(StructDeclSyntax.self)
+        else {
             throw MacroExpansionErrorMessage("Interface child embeddings require a generated coproduct or embedding")
         }
         let preserving = try string(first.expression).split(separator: ",").map { "\($0): ~Swift::Copyable" }
@@ -32,16 +38,20 @@ extension Embeddings {
                 throw MacroExpansionErrorMessage("Interface child embeddings require (case, parameter, canonical call)")
             }
             let parts = try tuple.elements.map { try string($0.expression) }
-            let name = parts[0], parameter = parts[1], call = parts[2]
+            let name = parts[0]
+            let parameter = parts[1]
+            let call = parts[2]
             let constraints = (preserving + ["\(parameter) == \(call)"]).joined(separator: ", ")
             let body = embedding ? "embed(.\(name)($0))" : "Self.\(name)($0)"
-            return try ExtensionDeclSyntax("""
+            return try ExtensionDeclSyntax(
+                """
                 extension \(type) where \(raw: constraints) {
                     \(raw: access)\(raw: embedding ? "" : "static ")var \(raw: name): \(raw: call).Embedding<\(raw: result)> {
                         .init { \(raw: body) }
                     }
                 }
-                """)
+                """
+            )
         }
     }
 }

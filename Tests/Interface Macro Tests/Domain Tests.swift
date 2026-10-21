@@ -173,7 +173,7 @@ struct `Domain Tests` {
 
         #expect(operation.input.name == .init(value: "Blob"))
         switch result {
-        case let .right(message):
+        case .right(let message):
             #expect(message == .init(value: "Hello, Blob!"))
         case .left:
             Issue.record("Never is uninhabited")
@@ -196,7 +196,7 @@ struct `Domain Tests` {
         let call = Greeting.Call.greet(.init(value: "Blob"))
 
         switch Greeting.Call.prisms.greet.match(call) {
-        case let .right(application):
+        case .right(let application):
             let name: Greeting.Name = application.input.name
             #expect(name == Greeting.Name(value: "Blob"))
         case .left:
@@ -217,7 +217,7 @@ struct `Domain Tests` {
             .consume(.init(value: 42))
         )
         switch consume matched {
-        case let .right(application):
+        case .right(let application):
             #expect(application.input.token.value == 42)
         case .left:
             Issue.record("Expected the consuming call prism to match")
@@ -243,7 +243,7 @@ struct `Domain Tests` {
             .linear(.consume(.init(value: 45)))
         )
         switch consume matched {
-        case let .right(child):
+        case .right(let child):
             #expect(try await eliminateChild(child) == 45)
         case .left:
             Issue.record("Expected the composed call prism to match")
