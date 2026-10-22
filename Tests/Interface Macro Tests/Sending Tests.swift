@@ -85,12 +85,10 @@ private enum NamedDomain {
 
 @Test func inputForwardingAndCaseExtractionCanShareAName() {
     let call = ProjectionCollision.Call.run(7)
-    let input: KeyPath<ProjectionCollision.Call, Int> = \.run
-    let application: KeyPath<ProjectionCollision.Call, ProjectionCollision.Run.Application?> = \.run
-    let forwarded: Int = call[keyPath: input]
-    let extracted: Int? = call[keyPath: application]?.input.run
-    #expect(forwarded == 7)
-    #expect(extracted == 7)
+    let input: (ProjectionCollision.Call) -> Int = \.run
+    let application: (ProjectionCollision.Call) -> ProjectionCollision.Run.Application? = \.run
+    #expect(input(call) == 7)
+    #expect(application(call)?.input.run == 7)
 }
 
 // Capabilities are declared using Swift protocols at the point of use.
