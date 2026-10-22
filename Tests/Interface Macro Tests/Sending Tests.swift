@@ -87,8 +87,10 @@ private enum NamedDomain {
     let call = ProjectionCollision.Call.run(7)
     let input: KeyPath<ProjectionCollision.Call, Int> = \.run
     let application: KeyPath<ProjectionCollision.Call, ProjectionCollision.Run.Application?> = \.run
-    #expect(call[keyPath: input] == 7)
-    #expect(call[keyPath: application]?.input.run == 7)
+    let forwarded: Int = call[keyPath: input]
+    let extracted: Int? = call[keyPath: application]?.input.run
+    #expect(forwarded == 7)
+    #expect(extracted == 7)
 }
 
 // Capabilities are declared using Swift protocols at the point of use.
