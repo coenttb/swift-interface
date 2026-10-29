@@ -31,10 +31,10 @@ let package = Package(
             traits: ["Clocks", "Foundation", "FoundationNetworking"]
         ),
         .package(url: "https://github.com/pointfreeco/swift-issue-reporting", from: "2.1.0"),
-        .package(url: "https://github.com/swift-atoms/swift-optic.git", branch: "main"),
+        .package(url: "https://github.com/swift-atoms/swift-optic.git", branch: "main", traits: ["CaseMacro", "FoldMacro", "PrismMacro"]),
         .package(url: "https://github.com/swift-atoms/swift-operation.git", branch: "main"),
         .package(url: "https://github.com/swift-atoms/swift-coproduct.git", branch: "main"),
-        .package(url: "https://github.com/swift-atoms/swift-product.git", branch: "main"),
+        .package(url: "https://github.com/swift-atoms/swift-product.git", branch: "main", traits: ["ProductMacro", "ProductSyntax"]),
         .package(url: "https://github.com/swiftlang/swift-syntax.git", "604.0.0"..<"605.0.0"),
     ],
     targets: [
